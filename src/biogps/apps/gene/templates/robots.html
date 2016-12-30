@@ -1,0 +1,24 @@
+{% extends "base_site.html" %}
+{% load biogps_filters %}
+{% block extrahead %}
+    <link rel="canonical" href="http://{{site}}/gene/{{geneid}}/" />
+    {# Added per Trac ticket 625 #}
+    <meta name="title" content="BioGPS - {{ symbol }}: {{ description }}">
+    {% if summary %}
+    <meta name="description" content="{{ summary }}">
+    {% endif %}
+{% endblock %}
+{% block blockbots %}{% endblock %}
+{% block breadcrumbs %}{% endblock %}
+
+{% block title %}{{symbol}} ({{description|truncatesmart:100}}) | Gene Report | BioGPS{% endblock %}
+
+{% block content %}
+{%autoescape off%}
+<table>
+<tr><td>{{datachart_content}}</td><td style="vertical-align: top; padding-left:50px">{{symtab_content}}</td></tr>
+</table>
+{%endautoescape%}
+{% endblock %}
+
+{% block ga %}{% endblock %}
