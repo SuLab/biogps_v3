@@ -1,0 +1,18 @@
+{% extends "NEW/base_site.html" %}
+
+{% block title %}New Plugin{% endblock %}
+{% block bodyclass %}plugin{% endblock %}
+
+{% block content %}
+<article id="plugin-form">
+    <div class="in">
+        {% include "_form.html" %}
+    </div>
+</article>
+
+<aside id="sidebar-right">
+    <div class="in">
+        {% include "_form_help.html" %}
+    </div>
+</aside>
+{% endblock %}

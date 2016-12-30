@@ -1,0 +1,32 @@
+<html>
+<body>
+	<h2>New plugin added.</h2>
+	<table border="1" style="margin: 10px 20px 10px 20px; border-collapse: collapse; padding-left: 5px; padding-right: 5px;">
+		<tr><td><b>id</b></td><td>{{p.id}}</td></tr>
+		<tr><td><b>title</b></td><td>{{p.title}}</td></tr>
+		<tr><td><b>Url template</b></td><td>
+		         {{p.url}}
+		         <p>Sample Links:&nbsp;
+		            <a href="http://{{site}}/plugin_v1/{{p.id}}/renderurl/?geneid=1017&redirect">CDK2</a>&nbsp;&nbsp;
+		            <a href="http://{{site}}/plugin_v1/{{p.id}}/renderurl/?geneid=695&redirect">BTK</a>&nbsp;&nbsp;
+		            <a href="http://{{site}}/plugin_v1/{{p.id}}/renderurl/?geneid=7157&redirect">TP53</a>&nbsp;&nbsp;
+		         </p>
+		        </td></tr>
+		<tr><td><b>author</b></td><td>{{p.author}}</td></tr>
+		<tr><td><b>tags</b></td><td>
+                                {% for tag in p.tags %}
+                                {{tag.name}}{%if not forloop.last %},{% endif %}
+                                {% endfor %}
+                                </td></tr>
+		<tr><td><b>permission</b></td><td>{{p.permission}}</td></tr>
+		<tr><td><b>summary</b></td><td>{{p.short_description}}</td></tr>
+		<tr><td><b>description</b></td><td>{{p.description}}</td></tr>
+		<tr><td><b>species</b></td><td>{{p.species}}</td></tr>
+		<tr><td><b>options</b></td><td>{{p.options}}</td></tr>
+        <tr><td></td><td>
+                     <a href="https://{{site}}/siteadmin/www/biogpsplugin/{{p.id}}/">View this plugin on admin interface</a><br />
+                     <a href="http://{{site}}{{p.get_absolute_url}}">View this plugin in Plugin library</a>  (if you have the permission)
+                     </td></tr>
+	</table>
+</body>
+</html>

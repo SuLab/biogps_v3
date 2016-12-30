@@ -1,0 +1,36 @@
+BioGPS user {{flagger.get_full_name}} ("{{flagger.username}}") just ({{flaginstance.when_added.ctime}}) flagged this plugin "{{plugin.title}}" (by "{{plugin.author}}") as inappropriate content with the following comment:
+
+{% if flaginstance.comment %}
+{{flaginstance.comment}}
+{% else %}
+No comment.
+{% endif %}
+
+{% if not for_plugin_owner %}
+    {% if plugin.owner.email %}
+The plugin owner ({{plugin.author}}) has been notified by a separate email sent to ({{plugin.owner.email}}).
+    {% else %}
+The plugin owner ({{plugin.author}}) has not been notified yet due to missing email.
+    {% endif %}
+    {% if user_agent %}
+USER_AGENT: {{user_agent}}
+    {% endif%}
+{% endif %}
+
+===================================
+{% if for_plugin_owner %}
+To view this plugin:
+http://biogps.org/plugin/{{plugin.id}}/
+{% else %}
+To view this flag:
+https://{{site}}/siteadmin/flag/flaggedcontent/{{flaginstance.flagged_content_id}}/
+
+To view this plugin:
+http://biogps.org/plugin/{{plugin.id}}/
+https://{{site}}/siteadmin/www/biogpsplugin/{{plugin.id}}/
+{% endif %}
+
+
+
+
+

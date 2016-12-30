@@ -1,0 +1,99 @@
+<div id="pluginheader" class="header">
+	<a id="plugin-add-explanation" href="javascript:navHandler('add');">
+		<h4>Create your own plugin</h4>
+		<p>It's easy! Click here to get started.</p>
+	</a>
+	<img src="/assets/img/plugin_logo_big.gif" alt="BioGPS Plugins" />
+	<div id="plugin-explanation">
+		<p><span>Plugins allow you to integrate multiple resources into BioGPS.</span>
+			Here you can search for plugins and add ones you like to your own
+			gene-report layout.</p>
+	</div>
+</div>
+
+
+
+
+
+<div id="pluginhome">
+	<div class="roundBox listborder tagcloudbox">
+		<h3>Tag Cloud</h3>
+		{% ifnotequal plugin_tags.count 0 %}
+			<p>{% for tag in plugin_tags %}
+				<font size="{{tag.font_size}}"><a href="javascript:biogps.currentLibrary.browsePluginsByTag('{{tag.name}}','library-home')" title="{{tag.count}} tagged">{{tag.name}}</a>&#32;</font>
+			{% endfor %}</p>
+		{% endifnotequal %}
+	</div>
+
+	<div class="listwrapper">
+		{% if newest_plist %}
+		<div class="roundBoxBlue listborder">
+			<span class="viewall"><a href="javascript:biogps.currentLibrary.browsePluginsBy('created','library-home')" title="View all newly added plugins">View all &raquo;</a></span>
+			<h3>Newest Additions</h3>
+			<div class="listscroll">
+				{% for p in newest_plist %}
+					<a class="pluginbox {{p.permissionClass}}" title="{{p.description|truncatewords:30}}" href="javascript:biogps.currentLibrary.renderPluginById({{p.id}},'library-home')">
+						<span class="name">{{p.title}}</span><br />
+						<span class="url">{{p.shortUrl}}</span>
+					</a>
+				{% endfor %}
+			</div>
+		</div>
+		{% endif %}
+
+		{% if popular_plist %}
+		<div class="roundBoxBlue listborder">
+			<span class="viewall"><a href="javascript:biogps.currentLibrary.browsePluginsBy('popularity','library-home')" title="View all most polular plugins">View all &raquo;</a></span>
+			<h3>Most Popular</h3>
+			<div class="listscroll">
+				{% for p in popular_plist %}
+					<a class="pluginbox {{p.permissionClass}}" title="{{p.description|truncatewords:30}}" href="javascript:biogps.currentLibrary.renderPluginById({{p.id}},'library-home')">
+						<span class="name">{{p.title}}</span><br />
+						<span class="url">{{p.shortUrl}}</span>
+					</a>
+				{% endfor %}
+				<div class="clear"></div>
+			</div>
+		</div>
+		{% endif %}
+
+		{% if updated_plist %}
+		<div class="roundBoxBlue listborder">
+			<span class="viewall"><a href="javascript:biogps.currentLibrary.browsePluginsBy('lastmodified','library-home')" title="View all recently updated plugins">View all &raquo;</a></span>
+			<h3>Recently Updated</h3>
+			<div class="listscroll">
+				{% for p in updated_plist %}
+					<a class="pluginbox {{p.permissionClass}}" title="{{p.description|truncatewords:30}}" href="javascript:biogps.currentLibrary.renderPluginById({{p.id}},'library-home')">
+						<span class="name">{{p.title}}</span><br />
+						<span class="url">{{p.shortUrl}}</span>
+					</a>
+				{% endfor %}
+			</div>
+		</div>
+		{% endif %}
+
+
+
+		{% if recommended_plist %}
+		<div class="sidebox">
+			<h3>We Recommend:</h3>
+			<ul>
+				{% for p in recommended_plist %}
+					<li>
+						<a href="javascript:biogps.currentLibrary.renderPluginById({{p.id}},'library-home')" title="{{p.description|truncatewords:30}}">{{p.title}}</a>
+					</li>
+				{% endfor %}
+			</ul>
+			<p class="viewall"><a href="javascript:onBrowsePlugins('recommended')" title="View all recommended plugins">View all &raquo;</a></p>
+		</div>
+		{% endif %}
+
+	</div>
+</div>
+
+
+
+
+
+<div id="pluginpage">
+</div>

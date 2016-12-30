@@ -1,0 +1,21 @@
+<h2>URL Template Syntax</h2>
+<p>You need to supply the URL to the website you want to add
+as a plugin, including one (or more) keywords. When you then
+use your plugin in a layout, the appropriate identifier for
+your gene of interest will be substituted in.</p>
+<p>For example, to make a simple Google search plugin, you would
+type in the URL below, then click
+the "Add Keyword" button and select whichever identifier you want.<br>
+<b>http://www.google.com/search?q=</b></p>
+<p>Once you have picked an identifier, the URL template
+will then look like this:<br>
+<b>http://www.google.com/search?q=&#123;&#123;Symbol&#125;&#125;</b></p>
+<p>When the plugin is then used in a layout to look at a gene,
+BioGPS will automatically insert the correct value. For
+example, if you used the UniGene ID keyword and the user
+is looking at CDK2, the actual URL that will load would be
+this:<br>
+<b>http://www.google.com/search?q=Hs.19192</b></p>
+<p>If you want to test your URL template before saving, just hit
+the "Test" button at the bottom of this page.
+</p>

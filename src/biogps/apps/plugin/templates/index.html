@@ -1,0 +1,81 @@
+{% extends "NEW/base_site.html" %}
+
+{% block title %}Plugin Library{% endblock %}
+{% block bodyclass %}{% endblock %}
+
+{% block content %}
+<article class="shift-for-sidebar-left">
+    <div class="in">
+        <header id="page-header">
+            <h1 id="page-header-text">{{ navigation.title }}</h1>
+            <div id="page-alt-nav">
+                <a href="/plugin/new/" class="jq-button ui-priority-primary">Create a Plugin</a>
+            </div>
+        </header>
+        <p class="large-summary"><b>Plugins are 3rd party websites that you can
+            use to learn more about your gene of interest.</b> BioGPS makes it
+            easy and quick to use your favorite gene-centric databases. Plugins
+            are the backbone of BioGPS and can be combined into custom
+            Layouts for viewing many at once.
+            <a href="/help_steps/">Learn more</a>.</p>
+
+        <div class="browse-tabs jq-tabs">
+            <ul>
+                {% for l in list1 %}
+                <li><a href="#tabs-{{ forloop.counter }}">{{ l.name }}</a></li>
+                {% endfor %}
+            </ul>
+            {% for l in list1 %}
+                <div id="tabs-{{ forloop.counter }}" class="browse-tab-list">
+                    <ul>
+                    {% for p in l.items %}
+                        <li><a href="{{ p.get_absolute_url }}"
+                            {% if p.short_description %}
+                                class="has-tooltip" title="{{ p.short_description }}"
+                            {% endif %}>{{ p.title }}</a></li>
+                    {% endfor %}
+                    {% if l.more %}
+                        <li><a class="more-link" href="{{ l.more }}">more &rsaquo;</a></li>
+                    {% endif %}
+                    </ul>
+                </div>
+            {% endfor %}
+        </div>
+
+        <section>
+            {% for l in list2 %}
+                <div class="browse-category-highlights">
+                    <h2><a href="{{ l.more }}">{{ l.name }}</a></h2>
+                    <ul>
+                    {% for p in l.items %}
+                        <li><a href="{{ p.get_absolute_url }}"
+                            {% if p.short_description %}
+                                class="has-tooltip" title="{{ p.short_description }}"
+                            {% endif %}>{{ p.title }}</a></li>
+                    {% endfor %}
+                        <li><a class="more-link" href="{{ l.more }}">more &rsaquo;</a></li>
+                    </ul>
+                </div>
+            {% endfor %}
+        </section>
+
+        <nav id="browse-footer-nav" style="display:none">
+            <div>
+                <a href="/plugin/all/" class="jq-button">List all Plugins</a>
+            </div>
+            <div>
+                <a href="/plugin/tag/" class="jq-button">Show all Categories</a>
+            </div>
+            <div>
+                <a href="/plugin/new/" class="jq-button">Suggest a Plugin</a>
+            </div>
+        </nav>
+    </div>
+</article>
+
+<aside id="sidebar-left" class="browse-navigation">
+    <div class="in">
+        {% include "search/navigation.html" %}
+    </div>
+</aside>
+{% endblock %}

@@ -1,0 +1,117 @@
+<form action="{% if plugin %}{{ plugin.get_absolute_url }}
+    {% else %}{% url 'plugin_home' %}{% endif %}" method="post">
+<div class="object-summary
+            {% if plugin.is_restricted %}object-restricted{% endif %}
+            {% if plugin.is_private %}object-private{% endif %}">
+    {% if plugin %}
+    <h1>Edit Your Plugin: {{ plugin.title }}</h1>
+    <input id="id_id" type="hidden" name="id" value="{{ plugin.id }}">
+    {% else %}
+    <h1>Register a New Plugin</h1>
+    {% endif %}
+
+    <div class="fieldWrapper">
+        <label for="id_title" class="fieldName"><b>Title:</b></label><br>
+        {{ form.title }}
+    </div>
+
+    <div class="fieldWrapper">
+        <label for="id_url" class="fieldName"><b>URL Template:</b></label><br>
+        <input id="id_url" type="text" name="url" value="{{ plugin.url }}" maxlength="500"
+            data-complete='[
+                { "label": "Entrez GeneID", "value": "entrezgene", "category": "" },
+                { "label": "Symbol", "value": "symbol", "category": "" },
+                { "label": "Ensembl GeneID", "value": "ensemblgene", "category": "" },
+                { "label": "UniGene ID", "value": "unigene", "category": "" },
+                { "label": "Uniprot ID", "value": "uniprot", "category": "" },
+                { "label": "RefSeq Transcript", "value": "refseqmrna", "category": "" },
+                { "label": "RefSeq Protein", "value": "refseqprotein", "category": "" },
+                { "label": "Ensembl Transcript", "value": "ensembltranscript", "category": "" },
+                { "label": "Ensembl Protein", "value": "ensemblprotein", "category": "" },
+                { "label": "PDB ID", "value": "pdb", "category": "" },
+
+                { "label": "Genome Assembly", "value": "assembly", "category": "More Options" },
+                { "label": "Genomic Location", "value": "genomelocation", "category": "More Options" },
+                { "label": "Chromosome", "value": "chr", "category": "More Options" },
+                { "label": "Genomic Start Position", "value": "gstart", "category": "More Options" },
+                { "label": "Genomic End Position", "value": "gend", "category": "More Options" },
+                { "label": "Alias", "value": "alias", "category": "More Options" },
+
+                { "label": "FLYBASE", "value": "FLYBASE", "species": "fruitfly", "category": "Species-Specific" },
+                { "label": "HGNC", "value": "HGNC", "species": "human", "category": "Species-Specific" },
+                { "label": "HPRD", "value": "HPRD", "species": "human", "category": "Species-Specific" },
+                { "label": "PharmGKB", "value": "PharmGKB", "species": "human", "category": "Species-Specific" },
+                { "label": "MGI", "value": "MGI", "species": "mouse", "category": "Species-Specific" },
+                { "label": "OMIM", "value": "MIM", "species": "human", "category": "Species-Specific" },
+                { "label": "RATMAP", "value": "RATMAP", "species": "rat", "category": "Species-Specific" },
+                { "label": "RGD", "value": "RGD", "species": "rat", "category": "Species-Specific" },
+                { "label": "TAIR", "value": "TAIR", "species": "thale-cress", "category": "Species-Specific" },
+                { "label": "WormBase", "value": "WormBase", "species": "nematode", "category": "Species-Specific" },
+                { "label": "Xenbase", "value": "Xenbase", "species": "frog", "category": "Species-Specific" },
+                { "label": "ZFIN", "value": "ZFIN", "species": "zebrafish", "category": "Species-Specific" }
+
+            ]'>
+        <a id="btn-test_url" class="requires-js" href="#">Test</a>
+        <div id="result-test_url"></div>
+    </div>
+
+    <div class="fieldWrapper">
+        <label for="id_short_description" class="fieldName"><b>Summary:</b> Describe this plugin in one tweet (140 characters or less)</label><br>
+        {{ form.short_description }}
+        <span id="id_short_description_count" class="charCounter"></span>
+    </div>
+
+    <div class="fieldWrapper">
+        <span class="fieldName"><b>Sharing Permissions:</b> who else on BioGPS gets to use this plugin?</span>
+        <div id="id_rolepermission">
+            <input id="id_rolepermission0" type="radio" name="rolepermission" value="biogpsusers"
+                {% if not plugin or plugin.is_public %}checked="checked"{% endif %}>
+            <label for="id_rolepermission0">Public</label>
+
+            {% if user.is_gnf_user or user.is_nvs_user %}
+            <input id="id_rolepermission1" type="radio" name="rolepermission" value="novartisusers">
+            <label for="id_rolepermission1">GNF &amp; Novartis</label>
+            {% endif %}
+
+            <input id="id_rolepermission2" type="radio" name="rolepermission" value="friendusers">
+            <label for="id_rolepermission2">Only My Friends</label>
+
+            <input id="id_rolepermission3" type="radio" name="rolepermission" value="myself"
+                {% if plugin.is_private %}checked="checked"{% endif %}>
+            <label for="id_rolepermission3">Not Shared</label>
+        </div>
+    </div>
+</div>
+
+<div class="object-full-details">
+    <div class="fieldWrapper">
+        <span class="fieldName"><b>Species:</b> Select which species this plugin supports.</span>
+        {{ form.species }}
+    </div>
+
+    <div class="fieldWrapper">
+        <label for="id_tags" class="fieldName"><b>Tags:</b> (categories)<br>
+            <span class="extra-details">Separate each tag by a space. For multi-word tags, use dashes (e.g. "text-mining").</span>
+        </label><br>
+        <input id="id_tags" type="text" name="tags" value="{{ plugin.tags|join:" " }}" maxlength="500"
+            data-complete='[
+            {% for t in all_tags %}
+                "{{ t|addslashes }}"{% if not forloop.last %},{% endif %}
+            {% endfor %}
+            ]'>
+    </div>
+
+    <div class="fieldWrapper">
+        <label for="id_description" class="fieldName"><b>Full Description:</b></label><br>
+        {{ form.description }}
+    </div>
+
+
+    <div class="form-controls">
+        <input type="submit" value="{% if plugin %}Save Changes{% else %}Register Plugin{% endif %}" class="btn-use-object btn-priority-primary btn-large">
+        <a href="{% if plugin %}{{ plugin.get_absolute_url }}
+            {% else %}{% url 'plugin_home' %}{% endif %}" class="btn-use-object">Cancel</a>
+    </div>
+</div>
+</form>
+

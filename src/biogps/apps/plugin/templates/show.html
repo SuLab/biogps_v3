@@ -1,0 +1,258 @@
+{% extends "NEW/base_site.html" %}
+{% load threadedcomments_tags %}
+{% load user_tags %}
+
+{% block title %}{{ current_obj.title }} Plugin{% endblock %}
+{% block bodyclass %}current_obj{% endblock %}
+
+{% block content %}
+<article>
+    <div class="in">
+        <div class="object-summary
+                    object-{{ current_obj.permission_style }}">
+            <span itemscope itemtype="http://data-vocabulary.org/Review-aggregate">
+                <h1><span class="object-type">Plugin:</span> <span itemprop="itemreviewed">{{ current_obj.title }}</span></h1>
+                <div class="object-summary-details">
+                    {% include 'rating/rating.html' %}
+                    <div id="meta_rating" data-options='{"model": "plugin", "pk": "{{ current_obj.id }}"}'></div>
+                    <span>
+                        <span id="object-ratings-total">
+                            <meta itemprop="rating" content="{{ current_obj.rating_data.avg }}"/>
+                            <span itemprop="count">{{ current_obj.rating_data.total }}</span> rating{{ current_obj.rating_data.total|pluralize }}
+                        </span> |
+                        {{ current_obj.popularity.users_count|default_if_none:0 }} user{{ current_obj.popularity.users_count|pluralize }} |
+                        {{ current_obj.popularity.score|floatformat:0 }} layout{{ current_obj.popularity.score|pluralize }}
+                        {# Commenting out favorites for now #}
+                        {% comment %}
+                        {% if user.is_authenticated %}
+                            | <span id="object-favorite">
+                                <a data-options='{"modelType": "plugin", "objectID": "{{ current_obj.id }}"}'
+                                   href="#" class="favorite
+                                {% if current_obj.is_favorite %}
+                                    favorite-true" title="Un-favorite this
+                                {% else %}
+                                    " title="Favorite this
+                                {% endif %}
+                                ">
+                                <span class="favorite-icon"></span>
+                                </a>
+                            </span>
+                        {% endif %}
+                        {% endcomment %}
+                    </span><br>
+
+                    <p>{{ current_obj.short_description }}</p>
+
+                    {% if current_obj.certified_owner %}
+                        <div class="author">
+                            <span class="ui-icon ui-icon-check"></span>
+                            Certified Owner: <a href="{{ current_obj.owner.get_absolute_url }}" rel="author">{{ current_obj.owner.get_valid_name }}</a>
+                        </div>
+                    {% else %}
+                        <div class="author">Registered by <a href="{{ current_obj.owner.get_absolute_url }}" rel="author">{{ current_obj.owner.get_valid_name }}</a></div>
+                    {% endif %}
+
+                    {% if current_obj.is_restricted %}<span class="restriction-text">Restricted Access</span>{% endif %}
+                    {% if current_obj.is_private %}<span class="restriction-text">Private Plugin</span>{% endif %}
+                </div>
+                <div class="object-summary-use">
+                    <a class="btn-use-object btn-priority-primary btn-add-plugin" href="/#goto=genereport&id=1017&add_plugin={{ current_obj.id }}">
+                        <h6>Add to Layout</h6>
+                        <span>View your gene of interest</span>
+                    </a>
+                    {% if user.is_authenticated and user.id == current_obj.owner.id %}
+                      <a class="btn-use-object btn-priority-primary" href="{% url 'plugin_edit' current_obj.id %}">Edit</a>
+                    {% endif %}
+                </div>
+            </span> <!-- itemscope -->
+        </div> <!-- object-summary -->
+
+        <div class="object-full-details">
+            <p>{{ current_obj.description }}</p>
+
+            <dl>
+                <dt>Species:</dt><dd>{{ current_obj.species|join:", " }}</dd><br>
+                <dt>URL Template:</dt><dd>{{ current_obj.url }}</dd><br>
+                {% if current_obj.mobile_url %}
+                <dt>Mobile URL:</dt><dd>{{ current_obj.mobile_url }}</dd><br>
+                {% endif %}
+                <dt>Updated:</dt><dd>{{ current_obj.lastmodified|date }}</dd><br>
+                <dt>Registered:</dt><dd>{{ current_obj.created|date }}</dd>
+            </dl>
+
+        <hr>
+        <div id="object-comments">
+        {% get_comment_list for current_obj as comment_list %}
+        {% if comment_list %}
+            <h2><b>{{ comment_list|length }} comment{{ comment_list|length|pluralize }}</b></h2>
+        {% endif %}
+        {% for comment in comment_list|fill_tree|annotate_tree %}
+
+                {% if not comment.open and not comment.close %}
+                    </li>
+                {% endif %}
+
+                {% if comment.open %}
+                    <ul>
+                {% endif %}
+
+                <li{% if comment.last %} class="last-comment"{% endif %}>
+
+                {# Parent comment #}
+                {% if not comment.parent_id %}
+                    <div id="{{ comment.id }}" class="parent-comment">
+                {% endif %}
+                <span id="edit-form-{{ comment.parent_id|default_if_none:'noParent' }}-{{ comment.id }}">
+                {{ comment.comment }}
+                </span>
+                {% if not comment.parent_id %}
+                    <div class="parent-comment-author">
+                {% else %}
+                    <span class="comment-author">
+                {% endif %}
+                 - {% user_link comment.user %} &nbsp;
+                <i><span id="comment-timesince-{{ comment.id }}">
+                {% if comment.submit_date|timesince == "0 minutes" %}
+                    a moment
+                {% else %}
+                    {{ comment.submit_date|timesince }}
+                {% endif %}
+                ago.
+                </span></i>
+                {% if user.is_authenticated and user.id == comment.user_id %}
+                    &nbsp; <i><a class="edit requires-js"
+                                 data-options='{"modelType": "plugin", "objectID": "{{ current_obj.id }}", "commentID": "{{ comment.id }}", "parentID": "{{ comment.parent_id }}"}'
+                                 href="#"> Edit</a></i>
+                {% endif %}
+                {% if not comment.parent_id %}
+                    </div> <!-- parent-comment-author -->
+                    </div> <!-- parent-comment -->
+                {% else %}
+                    </span> <!-- comment-author -->
+                {% endif %}
+
+                {% for close in comment.close %}
+                    {# Last reply in thread #}
+                    {% if comment.last and not forloop.last %}
+                        </li>
+                        <li>
+                        <div id="reply-{{ comment.id }}">
+                        {% if user.is_authenticated %}
+                            <div id="reply-form-{{ comment.id }}"></div>
+                            <a class="reply btn-use-object requires-js"
+                               data-options='{"modelType": "plugin", "objectID": "{{ current_obj.id }}", "commentID": "{{ comment.id }}", "parentID": "{{ comment.parent_id }}"}'
+                               href="#"> Reply</a>
+                        {% endif %}
+                        </div>
+                    {% endif %}
+                    </li>
+
+                    {# Parent comment with no replies #}
+                    {% if not comment.parent_id and not comment.last_child_id %}
+                        <ul><li>
+                        <div id="reply-{{ comment.id }}">
+                        {% if user.is_authenticated %}
+                            <div id="reply-form-{{ comment.id }}"></div>
+                            <a class="reply btn-use-object requires-js"
+                               data-options='{"modelType": "plugin", "objectID": "{{ current_obj.id }}", "commentID": "{{ comment.id }}"}'
+                               href="#"> Reply</a>
+                        {% endif %}
+                        </div>
+                        </li></ul>
+                    {% endif %}
+                    </ul>
+                {% endfor %}
+
+            {% endfor %}
+
+            {% if user.is_authenticated %}
+              <br />
+              <h2><b>Leave your comment</b></h2>
+              <div id="your-comment">
+              {% get_comment_form for current_obj as form %}
+                <form class="replyForm" action="/comment/plugin/{{ current_obj.id }}/" method="post">{% csrf_token %}
+                  {% if next %}<input type="hidden" name="next" value="{{ next }}" />{% endif %}
+                  {% for field in form %}
+                    {% if field.is_hidden %}
+                      {{ field }}
+                    {% else %}
+                      {% if field.name != "name" and field.name != "title" and field.name != "email" and field.name != "url" %}
+                      {% if field.errors %}{{ field.errors }}{% endif %}
+                        <p
+                        {% if field.errors %} class="error"{% endif %}
+                        {% ifequal field.name "honeypot" %}
+                            style="display:none;"
+                        {% endifequal %}
+                        {% if field.name == "comment" %}
+                            class="comment-field"
+                        {% endif %}
+                        >
+                        {{ field }}
+                        </p>
+                      {% endif %}
+                    {% endif %}
+                  {% endfor %}
+                  <p class="submit">
+                  <input type="submit" name="reply" class="submit-post btn-use-object" value="Save Comment" />
+                  </p>
+                </form>
+              </div> <!-- comment-form -->
+            {% else %}
+              <br />
+              <b><center>Please <a href="{% url 'auth_login' %}?next={{ full_path|urlencode }}">Login</a> or <a href="{% url 'auth_register' %}">Sign Up</a> to post comments.</center></b>
+              <br />
+            {% endif %}
+        </div> <!-- object-comments -->
+      </div> <!-- object-full-details -->
+
+    </div>
+</article>
+
+<aside id="sidebar-right">
+    <div class="in">
+        {% if current_obj.id == 9 %}
+        <div id="plugin-previews">
+            <div id="plugin-preview">
+                <div class="preview-label">Preview</div>
+                <img src="/assets/img2/plugin_preview.png">
+            </div>
+        </div>
+        {% endif %}
+        {% if current_obj.id == 10 %}
+        <div id="plugin-previews">
+            <div id="plugin-preview">
+                <div class="preview-label">Preview</div>
+                <img src="/assets/img2/plugin_preview-10.png">
+            </div>
+        </div>
+        {% endif %}
+
+        <h2>Tags</h2>
+        <ul class="tag-list">
+        {% for t in current_obj.tags %}
+            <li>
+                <a href="{% url 'plugin_list_for_tag' t.name %}" rel="tag">
+                    <span class="ui-icon ui-icon-tag2"></span>
+                    {{ t }}
+                </a>
+            </li>
+        {% empty %}
+            <li>No tags yet</li>
+        {% endfor %}
+        </ul>
+
+        {% if current_obj.popularity.related_plugins %}
+            <h2>Often Used With</h2>
+            <ul>
+                {% for p in current_obj.popularity.related_plugins %}
+                    <li>
+                        <a href="{{ p.url }}">{{ p.title }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% include "search/alternates.html" %}
+    </div>
+</aside>
+{% endblock %}

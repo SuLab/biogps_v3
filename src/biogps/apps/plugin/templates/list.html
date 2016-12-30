@@ -1,0 +1,146 @@
+{% extends "NEW/base_site.html" %}
+{% load biogps_tags %}
+{% load pagination_tags %}
+
+{% block title %}{{ navigation.title }}{% endblock %}
+{% block bodyclass %}{% endblock %}
+
+{% block content %}
+<article class="shift-for-sidebar-left">
+    <div class="in">
+        <header id="page-header">
+            <h1 id="page-header-text">{{ navigation.title }}</h1>
+            <div id="page-alt-nav" style="display:none">
+                [ Sorting Controls ]
+            </div>
+        </header>
+        {% ifequal navigation.doc_type "plugin" %}
+            <p class="large-summary"><b>Plugins are 3rd party websites that you can
+            use to learn more about your gene of interest.</b> BioGPS makes it
+            easy and quick to use your favorite gene-centric databases. Plugins
+            are the backbone of BioGPS and can be combined into custom
+            Layouts for viewing many at once.
+            <a href="/help_steps/">Learn more</a>.</p>
+        {% endifequal %}
+
+        {% ifequal navigation.doc_type "dataset" %}
+            <p class="large-summary"><b>Datasets are collections of data.</b>
+            <a href="/help_steps/">Learn more</a>.</p>
+        {% endifequal %}
+
+        <section>
+            {% if items %}
+                {% autopaginate items 10 %}
+                <div class="browse-pagination">
+                    {% paginate %}
+                    {{ navigation.paging_footer }}
+                </div>
+
+                <ol id="search-results">
+                {% for i in items %}
+                    <li>
+                        {% if i.in == "plugin" or i.in == "dataset" %}
+                            {% if i.in == "plugin" %}
+                                <div class="object-summary-use">
+                                    <a class="btn-use-object btn-priority-primary btn-add-plugin" href="/#goto=genereport&id=1017&add_plugin={{ i.id }}">
+                                        <h6>Add to Layout</h6>
+                                    </a>
+                                </div>
+                            {% endif %}
+                            <div>
+                            <h3>
+                                {% if navigation.multiple_types %}{{ i.in|capfirst }}: {% endif %}
+                                <a href=
+                                {% if i.in == "plugin" %}
+                                    "{% url 'plugin_show' i.id i.name|slugify %}">
+                                {% endif %}
+                                {% if i.in == "dataset" %}
+                                    "{% url 'dataset_show' i.id i.name|slugify %}">
+                                {% endif %}
+                                {{ i.name }}</a>
+                            </h3>
+
+                            <div class="extra-details">
+                                {% if i.rating_data.total > 0 %}
+                                    <div class="ratings-bar">
+                                        <div style="width:{% rating_percentage i.rating_data.avg %}%"></div>
+                                    </div>
+                                    {{ i.rating_data.total }} rating{{ i.rating_data.total|pluralize }} |
+                                {% endif %}
+                                {% for d,dv in i.usage_data.items %}
+                                    {% if not forloop.first %}|{% endif %}
+                                    {{ dv|floatformat:0 }} {{ d }}
+                                {% endfor %}
+                            </div>
+
+                            <p>{{ i.short_description }}</p>
+
+                            {% if i.tags %}
+                                <div class="extra-details">
+                                    Tags:
+                                    {% for t in i.tags %}
+                                        <a href=
+                                        {% if i.in == "plugin" %}
+                                            "{% url 'plugin_list_for_tag' t %}"
+                                        {% endif %}
+                                        {% if i.in == "dataset" %}
+                                            "{% url 'dataset_list_for_tag' t %}"
+                                        {% endif %}
+                                            rel="tag">
+                                            <span class="ui-icon ui-icon-tag2"></span>
+                                            {{ t }}</a>{% if not forloop.last %},{% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            <cite>{{ i.shortUrl }}</cite>
+                            <span class="extra-details">- by <a href="{{ i.owner.url }}">{{ i.owner.name }}</a></span>
+                        </div>
+                        {% else %}
+                        <div>
+                            <h3>
+                                {% if navigation.multiple_types %}Gene: {% endif %}
+                                <a href="/gene/{{ i.id }}/">{{ i.symbol }} ({{ i.name }})</a>
+                            </h3>
+
+                            <p>{{ i.summary }}</p>
+
+                            <div class="extra-details">
+                                Species: {{ i.species }}
+                                &nbsp;&nbsp;
+                                Entrez Gene: {{ i.entrezgene }}
+                                &nbsp;&nbsp;
+                                {% if i.homologene_id %}
+                                Homologene: {{ i.homologene_id }}
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+                </ol>
+
+                <div class="browse-pagination">
+                    {% paginate %}
+                    {{ navigation.paging_footer }}
+                </div>
+            {% else %}
+                <h2 style="margin-top: 3em;">
+                    {% if error %}
+                        There was an error processing your search. Please check your query syntax.
+                    {% else %}
+                        We couldn't find anything that matched your search.
+                    {% endif %}
+                </h2>
+                <p>If you believe this is in error, please contact us directly: {% emailus %}</p>
+            {% endif %}
+        </section>
+    </div>
+</article>
+
+<aside id="sidebar-left" class="browse-navigation">
+    <div class="in">
+        {% include "search/navigation.html" %}
+    </div>
+</aside>
+{% endblock %}
