@@ -87,3 +87,21 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+
+# for webapp
+.DS_Store
+node_modules
+*.log
+explorations
+TODOs.md
+dist/*.gz
+dist/*.map
+dist/vue.common.min.js
+test/e2e/reports
+test/e2e/screenshots
+coverage
+
+
+# for django app
+src/biogps/settings_*.py
