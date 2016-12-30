@@ -1,0 +1,33 @@
+<div id="ratings-box" class="requires-js">
+    <div id="ratings">
+        <div id="community-rating">
+        {% for rating in rating_static %}
+            <input name="static-ratings" type="radio"
+                   value="{{ rating }}" class="rating-static {split:2}"
+            {% if rating == current_obj.rating_data.avg_stars %}
+                checked="checked"
+            {% endif %}
+            >
+        {% endfor %}
+        </div>
+        {% if user.is_authenticated %}
+            {# Add interactive ratings #}
+            <div id="user-rating">
+            {% for rating in rating_scale %}
+                <input name="interactive-ratings" type="radio"
+                       value="{{ rating.0 }}" title="{{ rating.1 }}"
+                       class="rating">
+            {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    {% if user.is_authenticated %}
+        <div id="rating-detail">
+        {% if current_obj.user_rating %}
+            Your rating: {{ current_obj.user_rating }}
+        {% else %}
+            Click star to rate.
+        {% endif %}
+        </div>
+    {% endif %}
+</div>
