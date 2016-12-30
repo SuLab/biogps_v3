@@ -1,0 +1,24 @@
+<nav>
+    {% for f,fv in navigation.facets.items %}
+        {% if forloop.first %}
+            <h3>{{ fv.name|upper }}</h3>
+        {% else %}
+            <h4>{{ fv.name|upper }}</h4>
+        {% endif %}
+        <ul>
+        {% for t in fv.terms %}
+            <li><a href="{{ t.url }}" title="{{ t.title }}"
+                    {% if t.css_class %}class="{{ t.css_class }}"{% endif %}
+                    {% if t.active %}class="active"{% endif %}>
+                {% if t.icon %}<span class="ui-icon ui-icon-{{ t.icon }}"></span>{% endif %}
+                {{ t.term }}
+                {% if t.count %}
+                <span style="color: #888; display: none">({{ t.count }})</span>
+                {% endif %}
+            </a></li>
+        {% endfor %}
+        </ul>
+    {% endfor %}
+    
+    {% include "search/alternates.html" %}
+</nav>

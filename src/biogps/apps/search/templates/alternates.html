@@ -1,0 +1,10 @@
+{% if alternate_formats %}
+    <hr>
+    <div id="alternate-formats">
+        <h4>Other Formats</h4>
+        {% for f in alternate_formats %}
+            <a rel="alternate" type="application/{{ f }}" href="?format={{ f }}{{ getvars }}">{{ f|upper }}</a>
+            {% if not forloop.last %}&nbsp;&nbsp;{% endif %}
+        {% endfor %}
+    </div>
+{% endif %}

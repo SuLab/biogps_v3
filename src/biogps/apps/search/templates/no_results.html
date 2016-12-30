@@ -1,0 +1,18 @@
+{% extends "NEW/base_site.html" %}
+
+{% block title %}No Search Results | BioGPS{% endblock %}
+{% block bodyclass %}{% endblock %}
+
+{% block content %}
+<article class="shift-for-sidebar-left">
+    <div class="in">
+        <p class="large-summary"><b>No search results found.</b></p>
+    </div>
+</article>
+
+<aside id="sidebar-left" class="browse-navigation">
+    <div class="in">
+        {% include "alternates.html" %}
+    </div>
+</aside>
+{% endblock %}
