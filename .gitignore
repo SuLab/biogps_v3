@@ -105,3 +105,4 @@ coverage
 
 # for django app
 src/biogps/settings_*.py
+!src/biogps/settings_base.py
