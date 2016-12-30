@@ -1,0 +1,106 @@
+#Before installing the following python modules, install these packages in ubuntu:
+#    sudo apt-get install python-dev libpq-dev libxml2 python-libxml2 python-numpy libmemcached-dev
+
+# Required python modules for BioGPS app running in prod mode
+# To install all requirements, run:
+#    pip install -r requirements.txt
+Django==1.8.17
+ipyhton>=5.1.0
+Werkzeug>=0.11.11
+requests>=2.12.4
+psycopg2==2.6.1   #require libpq-dev
+elasticsearch>=5.0.1
+
+
+#pylibmc is required for memcache based caching backend
+#required in prod deployment, need "apt-get install libmemcached-dev" first
+#pylibmc>=1.5.1
+
+
+## Django-specific apps ##
+djangorestframework==3.5.3
+django-extensions==1.7.5
+django-allauth==0.29.0
+django-tagging==0.4.5
+
+#django-urlauth==0.1.8
+-e hg+https://bitbucket.org/gustavoam/django-urlauth@786cbc2d52924d1be245a9102574c01789db3bec#egg=django-urlauth   #this is a patched version for biogps
+-e git+git://github.com/gustavoam/django-flag@a5ea5e0e0bc987ea4c1988633a0641bee33fa565#egg=django-flag
+
+
+
+
+=========old requirements=================
+
+boto==2.5.1
+docutils==0.9.1
+feedcache==1.4
+feedparser==5.1.2
+gdata==2.0.17
+html2text==3.02
+httplib2==0.7.4
+requests==2.7.0
+nose==1.1.2
+pyes==0.19.1
+pymongo==2.3
+python-dateutil==2.1
+python-openid==2.2.5
+pytz==2012c
+simplejson==2.5.2
+urllib3==1.4  #needed by pyes
+vobject==0.8.1c
+
+# The following libxml2 and pyxslt are required for XML serialization
+# libxml2 may not work with pip, and need to install from the source
+# http://xmlsoft.org/python.html
+# use install binary packages as :
+# sudo apt-get install libxml2 python-libxml2
+#libxml2-python>=2.7.8
+
+# we made a patch on pyxslt
+#pyxslt==0.9.1
+-e git+git://github.com/newgene/pyxslt.git#egg=pyxslt   #this is a patched version of pyxslt
+
+
+
+
+## Django-specific apps ##
+South==0.7.3
+django-breadcrumbs==1.1.0
+django-debug-toolbar==0.9.4
+django-email-confirmation==0.1.4
+django-extensions==0.7.1
+django-flag==0.1.1
+django-mailer==0.1.0
+django-notification==0.1.5
+django-pagination==1.0.7
+django-ses==0.4.1
+django-tagging==0.3.1
+django-timezones==0.1.4
+django-urlauth==0.1.8   ##
+django-uwsgi-admin==0.1-alpha
+
+
+## The following Django apps with our own patches ##
+#django-account==0.1.14
+-e hg+https://bitbucket.org/newgene/django-account#egg=django-account   #this is a patched version for biogps
+
+#django-friends==0.1.5
+-e git+git://github.com/newgene/django-friends.git#egg=django-friends   #this is a patched version for biogps
+
+#django-threadedcomments==0.5.3
+-e git+git://github.com/newgene/django-threadedcomments.git#egg=django-threadedcomments   #this is a patched version for biogps
+
+#django-compress==1.0.1
+-e git+git://github.com/newgene/django-compress.git#egg=django-compress
+
+#django-rest-interface
+-e hg+https://bitbucket.org/newgene/django-rest-interface#egg=django-rest-interface
+
+
+
+## The following Django apps are included in BioGPS code repo, no need to install ##
+#django-authopenid
+#authsub
+#bbauth
+
