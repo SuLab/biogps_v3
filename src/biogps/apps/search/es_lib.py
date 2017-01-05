@@ -2,29 +2,30 @@
 The API library for performing queries on ElasticSearch.
 '''
 import sys
-import types
+import json
 from django.conf import settings
-from pyes import (ES, TermQuery, TermsQuery, StringQuery,
-                  FilteredQuery, BoolQuery, RangeQuery, MatchAllQuery)
-from pyes import ESRange
-from pyes.exceptions import (ElasticSearchException,
-                             SearchPhaseExecutionException,
-                             InvalidQuery)
-from pyes.es import ESJsonEncoder
+# from pyes import (ES, TermQuery, TermsQuery, StringQuery,
+#                   FilteredQuery, BoolQuery, RangeQuery, MatchAllQuery)
+# from pyes import ESRange
+# from pyes.exceptions import (ElasticSearchException,
+#                              SearchPhaseExecutionException,
+#                              InvalidQuery)
+# from pyes.es import ESJsonEncoder
 
-from elasticsearch import ElasticSearch
+from elasticsearch import ElasticSearch, ElasticsearchException
+from elasticsearch_dsl import Search
+from elasticsearch_dsl.query import Q, Bool, MatchAll, A
 
-from biogps.utils import json, dotdict
 from biogps.utils.models import get_role_shortnames
 from biogps.search.results import BiogpsSearchResult
 
-import logging
-log = logging.getLogger('pyes')
-if settings.DEBUG:
-    log.setLevel(logging.DEBUG)
-    if len(log.handlers) == 0:
-        log_handler = logging.StreamHandler()
-        log.addHandler(log_handler)
+# import logging
+# log = logging.getLogger('pyes')
+# if settings.DEBUG:
+#     log.setLevel(logging.DEBUG)
+#     if len(log.handlers) == 0:
+#         log_handler = logging.StreamHandler()
+#         log.addHandler(log_handler)
 
 def get_es_conn(ES_HOST=None, default_idx=settings.ES_INDEXES['default']):
     ES_HOST = ES_HOST or settings.ES_HOST
@@ -33,7 +34,9 @@ def get_es_conn(ES_HOST=None, default_idx=settings.ES_INDEXES['default']):
     conn = ElasticSearch(ES_HOST, timeout=300)
     return conn
 
+
 _conn = get_es_conn()
+
 
 def safe_genome_pos(s):
     '''
@@ -41,13 +44,12 @@ def safe_genome_pos(s):
        >>> safe_genome_pos('1000') = 1000
        >>> safe_genome_pos('10,000') = 100000
     '''
-    s_type = type(s)
-    if s_type is types.IntType:
+    if isinstance(s, int):
         return s
-    elif s_type in types.StringTypes:
+    elif isinstance(s, str):
         return int(s.replace(',', ''))
     else:
-        raise ValueError('invalid type "%s" for "save_genome_pos"' % s_type)
+        raise ValueError('invalid type "%s" for "save_genome_pos"' % type(s))
 
 
 #class TermsQuery(TermQuery):
@@ -71,9 +73,11 @@ def safe_genome_pos(s):
 class ESQuery():
     ES_AVAILABLE_TYPES = settings.ES_AVAILABLE_TYPES
     ES_MAX_QUERY_LENGTH = settings.ES_MAX_QUERY_LENGTH
+    ES_INDEX_NAME = settings.ES_INDEX_NAME
 
     def __init__(self, user=None):
         self.conn = _conn
+        self.s = Search().using(self.conn).index(self.ES_INDEX_NAME)
         self.user = user
 
         #remembers the last successful query and doc_types for later use
@@ -90,14 +94,9 @@ class ESQuery():
         '''
         #filter = TermQuery(field='permission', value='gnfusers')
         user = user or self.user
-        filter = BoolQuery()
 
-        #always includes "_type:gene", so gene type will bypass the permission
-        # filters below.
-        filter.add_should(TermQuery('_type', 'gene'))
-        #allow 'dataset' type bypass the permission below for now,
-        #until permission for dataset is set.
-        filter.add_should(TermQuery('_type', 'dataset'))
+        # filter = BoolQuery()
+        filters = []
 
         #filter by roles
         if not user or user.is_anonymous():
@@ -107,15 +106,17 @@ class ESQuery():
         if 'biogpsusers' not in user_roles:
             #always add the role for public access
             user_roles.append('biogpsusers')
-        role_filter = TermsQuery(field='role_permission', value=user_roles)
-        filter.add_should(role_filter)
+        # role_filter = TermsQuery(field='role_permission', value=user_roles)
+        role_filter = Q('terms', role_permission=user_roles)
+        filters.append(role_filter)
 
         #filter by username to get user's own objects
         if user and user.username:
-            username_filter = TermQuery(field='username', value=user.username)
-            filter.add_should(username_filter)
+            # username_filter = TermQuery(field='username', value=user.username)
+            username_filter = Q('term', username=user.username)
+            filters.append(username_filter)
 
-        return filter
+        return filters
 
     def _get_default_facets(self, doc_types):
         facets = set()
@@ -126,46 +127,41 @@ class ESQuery():
             facets = list(facets)
         return facets or None
 
-    def _switch_index(self, doc_types=None):
-        '''switch index to perform ES queries based on doc_types:
-             if doc_types = "dataset" or ["dataset"], set to
-                 settings.ES_INDEXES['dataset']
-             if doc_types contains "dataset" and others, include
-                 settings.ES_INDEXES['dataset']
-             otherwise, set to settings.ES_INDEXES['default']
-        '''
-        if doc_types in ['dataset', ['dataset'], ('dataset',)]:
-            self.conn.default_indices = [settings.ES_INDEXES['dataset']]
-        elif type(doc_types) in (types.ListType, types.TupleType) and \
-             'dataset' in doc_types:
-            self.conn.default_indices = [settings.ES_INDEXES['default'],
-                                          settings.ES_INDEXES['dataset']]
-        else:
-            self.conn.default_indices = [settings.ES_INDEXES['default']]
+    # def _switch_index(self, doc_types=None):
+    #     '''switch index to perform ES queries based on doc_types:
+    #          if doc_types = "dataset" or ["dataset"], set to
+    #              settings.ES_INDEXES['dataset']
+    #          if doc_types contains "dataset" and others, include
+    #              settings.ES_INDEXES['dataset']
+    #          otherwise, set to settings.ES_INDEXES['default']
+    #     '''
+    #     if doc_types in ['dataset', ['dataset'], ('dataset',)]:
+    #         self.conn.default_indices = [settings.ES_INDEXES['dataset']]
+    #     elif type(doc_types) in (types.ListType, types.TupleType) and \
+    #          'dataset' in doc_types:
+    #         self.conn.default_indices = [settings.ES_INDEXES['default'],
+    #                                       settings.ES_INDEXES['dataset']]
+    #     else:
+    #         self.conn.default_indices = [settings.ES_INDEXES['default']]
 
-
-    def _query(self, q=None, doc_types=None):
+    def _query(self, q=None, doc_types=None, fields=None, **kwargs):
         '''Do the actual query.'''
         q = q or self._q
         doc_types = doc_types or self._doc_types
-        self._switch_index(doc_types)
+        # self._switch_index(doc_types)
+        s = self.s.doc_type(**doc_types).query(q, fields=fields).extra(**kwargs)
         # Run the actual search
         try:
-            # result = self.conn.search(query=q, doc_types=doc_types)
-            # result._do_search()
-            result = self.conn.search_raw(query=q, doc_types=doc_types)
-        except (ElasticSearchException, SearchPhaseExecutionException, InvalidQuery):
+            result = s.execute()
+        except ElasticsearchException:
             exc_name = sys.exc_type.__name__
-            err_msg =  sys.exc_value.args[0] if (sys.exc_value.args)>0 else ""
+            err_msg = sys.exc_value.args[0] if (sys.exc_value.args) > 0 else ""
             err_msg = exc_name + ": " + err_msg
             result = {'error': err_msg}
 
         #record the last successful query and doc_types for later use:
         self._q = q
         self._doc_types = doc_types
-
-        #get raw json output, get rid of pyes.es.DotDict in the result._results
-        # result = json.loads(ESJsonEncoder().encode(result._results))
 
         result = BiogpsSearchResult(result)
         #keep a reference of ESQuery object generates the result.
@@ -176,9 +172,9 @@ class ESQuery():
         '''Return True if "only_in" doc_types used in ES query are valid type
            (specified in settings.ES_AVAILABLE_TYPES)
         '''
-        if self._doc_types and type(self._doc_types) is types.ListType and \
-           len(set(self._doc_types) - set(self.ES_AVAILABLE_TYPES)) == 0:
-           return True
+        if self._doc_types and isinstance(self._doc_types, list) and \
+                len(set(self._doc_types) - set(self.ES_AVAILABLE_TYPES)) == 0:
+            return True
         else:
             return False
 
@@ -229,57 +225,69 @@ class ESQuery():
 
         # Initialize q if it was not specified
         if not q:
-            q = MatchAllQuery()
+            q = MatchAll()
         # Setup q as a Query object if it was passed in as a string
-        if type(q) in types.StringTypes:
+        if isinstance(q, str):
             # Check for max query length
             if len(q) > self.ES_MAX_QUERY_LENGTH:
                 return BiogpsSearchResult({'error': 'Query string too long.'})
-            q = StringQuery(q, default_operator='AND')
+            #q = StringQuery(q, default_operator='AND')
+            q = Q('query_string', query=q)
 
         # Apply custom_filter if provided
         if custom_filter:
-            q = FilteredQuery(q, custom_filter)
+            q = Bool(must=q, filter=custom_filter)
         # Otherwise, call the default filter build chain
         else:
-            filter = self._build_filter(doc_types, filter_by)
-            if filter:
-                q = FilteredQuery(q, filter)
+            filters = self._build_filters(doc_types, filter_by)
+            if filters:
+                q = Bool(must=q, filter=filters)
 
-        q = q.search(fields=fields, start=start, size=size, sort=sort , explain=explain) # , index_boost={'gene': 1})
-
+        s = self.s.doc_type(**doc_types).query(q, fields=fields)
         # Add highlighting
         for _h in h:
-            q.add_highlight(_h, fragment_size=300, number_of_fragments=0)
+            s.highlight(_h, fragment_size=300, number_of_fragments=0)
 
         # Add faceting
         _facets = facets or self._get_default_facets(doc_types)
         if _facets:
             for _f in _facets:
-                q.facet.add_term_facet(_f)
+                a = A('terms', field=_f)
+                s.aggs.bucket(_f, a)
+        if sort:
+            s.sort(*sort)
+        if explain:
+            s.extra(explain=explain)
+        s = s[start: (start + size)]
 
         # Only for debugging
         if returnquery:
-            return json.dumps(q.q, indent=2)
+            return json.dumps(s.to_dict(), indent=2)
 
-        # Run the final query and return the results
-        return self._query(q, doc_types)
+        # Run the actual search
+        try:
+            result = s.execute()
+        except ElasticsearchException:
+            exc_name = sys.exc_type.__name__
+            err_msg = sys.exc_value.args[0] if (sys.exc_value.args) > 0 else ""
+            err_msg = exc_name + ": " + err_msg
+            result = {'error': err_msg}
+        return result
 
+    # def fetch(self, start, size=None):
+    #     '''Based on stored last self._q and self._doc_types to fetch more hits
+    #        based on given start and size.
+    #        size will be the same if not provided.
+    #     '''
+    #     if not self._q or not self._doc_types:
+    #         return
 
-    def fetch(self, start, size=None):
-        '''Based on stored last self._q and self._doc_types to fetch more hits
-           based on given start and size.
-           size will be the same if not provided.
-        '''
-        if not self._q or not self._doc_types:
-            return
+    #     self._q.start = start
+    #     if size:
+    #         self._q.size = size
+    #     return self._query()
 
-        self._q.start = start
-        if size:
-            self._q.size = size
-        return self._query()
-
-    def _build_filter(self, only_in=[], filter_by=None):
+    def _build_filters(self, only_in=[], filter_by=None):
         '''Return list of hits based on given value on a specific field.
            @param filter_by: A dictionary of {<field>: <value>} or
                              a list of (<field>, <value>) tuple, e.g.,
@@ -289,10 +297,7 @@ class ESQuery():
 
            @param kwargs: refer to self.query method.
         '''
-        if only_in == ['gene']:
-            filter = BoolQuery()
-        else:
-            filter = self._get_user_filter()
+        filters = self._get_user_filter()
 
         if filter_by:
             if isinstance(filter_by, dict):
@@ -300,15 +305,9 @@ class ESQuery():
             else:
                 _filter_by = filter_by
             for (field, value) in _filter_by:
-                if type(value) is types.ListType:
-                    sub_filter = BoolQuery()
-                    for v in value:
-                        sub_filter.add_should(TermQuery(field, v))
-                    filter.add_must(sub_filter)
-                else:
-                    filter.add_must(TermQuery(field, value))
+                filters.append(Q('terms', field=value))
 
-        return None if filter.is_empty() else filter
+        return filters
 
     def get(self, type, id, fields=None):
         '''Get an indexed doc based on type and doc id.
@@ -323,58 +322,51 @@ class ESQuery():
         if type not in self.ES_AVAILABLE_TYPES:
             raise ValueError('Unknown "type": "%s".' % type)
 
-        if type == 'gene':
-            # if type is gene, just grab it directly
-            d = self.conn.get(self.ES_INDEXES['gene'], type, id, fields=fields)
+        # if type is any of biogps models, do a query with user_filter
+        #result = self.filter("_id", id, only_in=[type])
+        q = Q('term', _id=id, filter=self._get_user_filter())
+        s = self.s.doc_type([type]).query(q, fields=fields)
+        result = s.execute()
+
+        if result.hits.total == 1:
+            return result.hits[0]
+        elif result.hits.total == 0:
+            return
         else:
-            # if type is any of biogps models, do a query with user_filter
-            #result = self.filter("_id", id, only_in=[type])
-            result = self.query(filter_by=[("_id", id)], only_in=[type])
-#            q = MatchAllQuery()
-#            filter = self._get_user_filter()
-#            filter.add_must(TermQuery('_id', id))
-#            q = FilteredQuery(q, filter)
-#            q = q.search(fields=fields)
-#            result = self.conn.search(query=q, doc_types=[type])
-            if result['hits']['total'] == 1:
-                d = result['hits']['hits'][0]
-            elif result['hits']['total'] == 0:
-                return
-            else:
-                raise ValueError('Ambiguous "id", "%s", in "%s" index_type.' % (id, type))
+            raise ValueError('Ambiguous "id", "%s", in "%s" index_type.' % (id, type))
 
-        if '_source' in d:
-            return dotdict(d['_source'])
-        elif 'fields' in d:
-            d['fields']['id'] = d['_id']
-            return dotdict(d['fields'])
-        else:
-            raise KeyError('Can not find either "_source" or "fields" key.')
+        # if '_source' in d:
+        #     return dotdict(d['_source'])
+        # elif 'fields' in d:
+        #     d['fields']['id'] = d['_id']
+        #     return dotdict(d['fields'])
+        # else:
+        #     raise KeyError('Can not find either "_source" or "fields" key.')
 
-    def query_gene_by_interval(self, chr, gstart, gend,
-                               taxid=None, species=None, assembly=None,
-                               **kwargs):
-        '''query genes by genome interval.'''
-        if (taxid, species, assembly) == (None, None, None):
-            raise ValueError('At least one of "taxid", "species", "assembly" need to be specified.')
+    # def query_gene_by_interval(self, chr, gstart, gend,
+    #                            taxid=None, species=None, assembly=None,
+    #                            **kwargs):
+    #     '''query genes by genome interval.'''
+    #     if (taxid, species, assembly) == (None, None, None):
+    #         raise ValueError('At least one of "taxid", "species", "assembly" need to be specified.')
 
-        qrange = ESRange(field='pos',
-                         from_value=safe_genome_pos(gstart),
-                         to_value=safe_genome_pos(gend),
-                         include_lower=True,
-                         include_upper=True)
-        q = RangeQuery(qrange)
-        filter = BoolQuery()
-        filter.add_must(TermQuery('chr', chr))
-        if taxid:
-            filter.add_must(TermQuery('taxid', taxid))
-        if species:
-            filter.add_must(TermQuery('species', species))
-        if assembly:
-            filter.add_must(TermQuery('assembly', assembly))
+    #     qrange = ESRange(field='pos',
+    #                      from_value=safe_genome_pos(gstart),
+    #                      to_value=safe_genome_pos(gend),
+    #                      include_lower=True,
+    #                      include_upper=True)
+    #     q = RangeQuery(qrange)
+    #     filter = BoolQuery()
+    #     filter.add_must(TermQuery('chr', chr))
+    #     if taxid:
+    #         filter.add_must(TermQuery('taxid', taxid))
+    #     if species:
+    #         filter.add_must(TermQuery('species', species))
+    #     if assembly:
+    #         filter.add_must(TermQuery('assembly', assembly))
 
-        q = FilteredQuery(q, filter)
-        return self.query(q, only_in=['gene'], **kwargs)
+    #     q = FilteredQuery(q, filter)
+    #     return self.query(q, only_in=['gene'], **kwargs)
 
 
 class ESPages():
